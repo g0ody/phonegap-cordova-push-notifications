@@ -26,7 +26,7 @@ document.addEventListener('push-notification', function(event) {
 7. Add <access origin="https://cp.pushwoosh.com" subdomains="true" /> to the cordova.xml
 
 8. Modify AndroidManifest.xml as specified here:
-http://www.pushwoosh.com/programming-push-notification/android-push-notification-for-phonegap/
+http://www.pushwoosh.com/programming-push-notification/android-push-notification-sdk-configuration-guide/
 Follow the step 9.
 
 P.S. lib folder contains already compiled library (.jar) of the source code
