@@ -12,16 +12,18 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import com.google.android.c2dm.C2DMessaging;
+import com.google.android.gcm.GCMRegistrar;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class PushManager
 {
     // app id in the backend
-    private volatile String mAppId = null;
-    private volatile String mSenderId;
+    private volatile String mAppId;
+    volatile static String mSenderId;
 
     // message id in the notification bar
-    public static final int MESSAGE_ID = 1001;
+    public static int MESSAGE_ID = 1001;
 
     private static final String HTML_URL_FORMAT = "https://cp.pushwoosh.com/content/%s";
 
@@ -31,31 +33,26 @@ public class PushManager
     public static final String UNREGISTER_ERROR_EVENT = "UNREGISTER_ERROR_EVENT";
     public static final String PUSH_RECEIVE_EVENT = "PUSH_RECEIVE_EVENT";
 
-    private Context context;
-    private Bundle lastPush;
+    private Context mContext;
+    private Bundle mLastBundle;
+    public static Boolean mSimpleNotification;
 
     PushManager(Context context)
     {
-        if (null == context)
-        {
-            throw new IllegalArgumentException("Context can't be null");
-        }
-        this.context = context;
-        mAppId = C2DMessaging.getApplicationId(context);
-        mSenderId = C2DMessaging.getSenderId(context);
+        checkNotNull(context, "context");
+        mContext = context;
+        mAppId = PreferenceUtils.getApplicationId(context);
+        mSenderId = PreferenceUtils.getSenderId(context);
     }
 
     public PushManager(Context context, String appId, String senderId)
     {
-        if (null == context)
-        {
-            throw new IllegalArgumentException("Context can't be null");
-        }
-        this.context = context;
+        this(context);
+
         mAppId = appId;
         mSenderId = senderId;
-        C2DMessaging.setApplicationId(context, mAppId);
-        C2DMessaging.setSenderId(context, senderId);
+        PreferenceUtils.setApplicationId(context, mAppId);
+        PreferenceUtils.setSenderId(context, senderId);
     }
 
     /**
@@ -64,75 +61,120 @@ public class PushManager
      */
     public void onStartup(Bundle savedInstanceState, Context context)
     {
-        if (null == savedInstanceState)
+        checkNotNullOrEmpty(mAppId, "mAppId");
+        checkNotNullOrEmpty(mSenderId, "mSenderId");
+
+        // Make sure the device has the proper dependencies.
+        GCMRegistrar.checkDevice(context);
+        // Make sure the manifest was properly set - comment out this line
+        // while developing the app, then uncomment it when it's ready.
+        GCMRegistrar.checkManifest(context);
+
+        final String regId = GCMRegistrar.getRegistrationId(context);
+        if (regId.equals(""))
         {
-            if(context instanceof Activity)
+            // Automatically registers application on startup.
+            GCMRegistrar.register(context, mSenderId);
+        }
+        else
+        {
+            if (context instanceof Activity)
             {
-                if(((Activity) context).getIntent().hasExtra(PushManager.PUSH_RECEIVE_EVENT))
+                if (((Activity) context).getIntent().hasExtra(PushManager.PUSH_RECEIVE_EVENT))
                 {
                     // if this method calls because of push message, we don't need to register
                     return;
                 }
             }
-            
-            String id = C2DMessaging.getRegistrationId(context);
-            if(id != null && !id.equals("")) {
-            	DeviceRegistrar.registerWithServer(context, id);
-            }
-            else {
-            	C2DMessaging.register(context);
-            }
-        }
-        else
-        {
-            // calls if activity restarts
-            String appId = C2DMessaging.getApplicationId(context);
-            String id = C2DMessaging.getRegistrationId(context);
 
-            if (id == null || id.equals("") || appId == null || !appId.equals(mAppId))
+            String oldAppId = PreferenceUtils.getApplicationId(context);
+
+            if (!oldAppId.equals(mAppId) || savedInstanceState == null)
             {
                 // if not register yet or an other id detected
-                C2DMessaging.register(context);
+                DeviceRegistrar.registerWithServer(context, regId);
             }
-            else {
-            	DeviceRegistrar.registerWithServer(context, id);
-            }
+        }
+    }
+
+    /**
+     * Note this will take affect only after PushGCMIntentService restart if it is already running
+     */
+    public void setMultyNotificationMode()
+    {
+        mSimpleNotification = false;
+    }
+
+    /**
+     * Note this will take affect only after PushGCMIntentService restart if it is already running
+     */
+    public void setSimpleNotificationMode()
+    {
+        mSimpleNotification = true;
+    }
+
+    private void checkNotNullOrEmpty(String reference, String name)
+    {
+        checkNotNull(reference, name);
+        if (reference.length() == 0)
+        {
+            throw new IllegalArgumentException(
+                    String.format("Please set the %1$s constant and recompile the app.", name));
+        }
+    }
+
+    private void checkNotNull(Object reference, String name)
+    {
+        if (reference == null)
+        {
+            throw new IllegalArgumentException(
+                    String.format("Please set the %1$s constant and recompile the app.", name));
         }
     }
 
     public void unregister()
     {
-        C2DMessaging.unregister(context);
+        GCMRegistrar.unregister(mContext);
     }
 
     public String getCustomData()
     {
-        if (lastPush == null)
+        if (mLastBundle == null)
         {
             return null;
         }
 
-        String customData = (String) lastPush.get("u");
+        String customData = (String) mLastBundle.get("u");
         return customData;
     }
 
     public boolean onHandlePush(Activity activity)
     {
         Bundle pushBundle = activity.getIntent().getBundleExtra("pushBundle");
-        if (null == pushBundle || null == context)
+        if (null == pushBundle || null == mContext)
         {
             return false;
         }
 
-        lastPush = pushBundle;
+        mLastBundle = pushBundle;
 
-        //user data
-        String userData = (String) pushBundle.get("u");
-        if (userData == null)
+        JSONObject dataObject = new JSONObject();
+        try
         {
-            userData = (String) pushBundle.get("title");
+            if (pushBundle.containsKey("title"))
+            {
+                dataObject.put("title", pushBundle.get("title"));
+            }
+            if (pushBundle.containsKey("u"))
+            {
+                dataObject.put("userdata", new JSONObject(pushBundle.getString("u")));
+            }
+        } catch (JSONException e)
+        {
+            // pass
         }
-        PushEventsTransmitter.onMessageReceive(context, userData);
+
+        PushEventsTransmitter.onMessageReceive(mContext, dataObject.toString());
 
         // push message handling
         String url = (String) pushBundle.get("h");

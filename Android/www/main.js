@@ -8,17 +8,23 @@ var deviceInfo = function() {
     document.getElementById("colorDepth").innerHTML = screen.colorDepth;
 
 	var pushNotification = window.plugins.pushNotification;
-	pushNotification.registerDevice({ email: "C2DM_SENDER_EMAIL", appid : "PUSHWOOSH_APP_ID" },
+	// CHANGE projectid & appid
+	pushNotification.registerDevice({ projectid: "PROJECT_ID_FROM_GCM", appid : "PUSHWOOSH_APP_CODE" },
 									function(status) {
-										navigator.notification.alert(JSON.stringify(['registerDevice', status]));
+										console.warn('registerDevice:%o', status);
+										console.warn(JSON.stringify(['registerDevice', status]));
 									},
 									function(status) {
-										navigator.notification.alert(JSON.stringify(['failed to register ', status]));
+									    console.warn('failed to register :%o', status);
+									    console.warn(JSON.stringify(['failed to register ', status]));
 									});
 									
 	document.addEventListener('push-notification', function(event) {
-								console.warn('push-notification!: ' + event.notification);
-								navigator.notification.alert(JSON.stringify(['push-notification!', event.notification]));
+	                            var title = event.notification.title;
+	                            var userData = event.notification.userdata;
+
+								console.warn('user data: ' + JSON.stringify(userData));
+								navigator.notification.alert(title);
 							  });
 									
 };

@@ -8,8 +8,6 @@
 
 package com.arellomobile.android.push;
 
-import com.pushwoosh.test.plugin.pushnotifications.PushNotifications;
-
 import android.content.Context;
 import android.content.Intent;
 
@@ -25,27 +23,29 @@ public class PushEventsTransmitter
 
     public static void onRegistered(final Context context, String registrationId)
     {
-        PushNotifications.onRegistered(registrationId);
+        String alertString = "Registered. RegistrationId is " + registrationId;
+        transmit(context, registrationId, PushManager.REGISTER_EVENT);
     }
 
     public static void onRegisterError(final Context context, String errorId)
     {
-        PushNotifications.onRegisteredError(errorId);
+        String alertString = "Register error. Error message is " + errorId;
+        transmit(context, errorId, PushManager.REGISTER_ERROR_EVENT);
     }
 
     public static void onUnregistered(final Context context, String registrationId)
     {
-        PushNotifications.onUnregistered(registrationId);
+        String alertString = "Unregistered. RegistrationId is " + registrationId;
+        transmit(context, registrationId, PushManager.UNREGISTER_EVENT);
     }
 
     public static void onUnregisteredError(Context context, String errorId)
     {
-        PushNotifications.onUnregisteredError(errorId);
+        transmit(context, errorId, PushManager.UNREGISTER_ERROR_EVENT);
     }
 
     public static void onMessageReceive(final Context context, String message)
     {
-    	PushNotifications.onMessageReceive(message);
         transmit(context, message, PushManager.PUSH_RECEIVE_EVENT);
     }
 }

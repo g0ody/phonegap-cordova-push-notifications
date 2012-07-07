@@ -14,13 +14,15 @@ import android.content.res.Configuration;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-import com.google.android.c2dm.C2DMessaging;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import com.google.android.gcm.GCMRegistrar;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.UUID;
@@ -32,6 +34,8 @@ public class DeviceRegistrar
 {
     private static final String TAG = "DeviceRegistrar";
 
+    private static final int MAX_TRIES = 5;
+
     private static final String BASE_URL = "https://cp.pushwoosh.com/json";
 
     private static final String REGISTER_PATH = "/1.2/registerDevice";
@@ -42,84 +46,127 @@ public class DeviceRegistrar
 
     public static void registerWithServer(final Context context, final String deviceRegistrationID)
     {
-        try
+        int res = 0;
+        for (int i = 0; i < MAX_TRIES; ++i)
         {
-            HttpResponse res = makeRequest(context, deviceRegistrationID, REGISTER_PATH);
-            if (res.getStatusLine().getStatusCode() != 200)
+            try
             {
-                PushEventsTransmitter.onRegisterError(context, "status code is " + res.getStatusLine().getStatusCode());
-                Log.w(TAG, "Registration error " + String.valueOf(res.getStatusLine().getStatusCode()));
-            }
-            else
+                res = makeRequest(context, deviceRegistrationID, REGISTER_PATH);
+                if (200 == res)
+                {
+                    GCMRegistrar.setRegisteredOnServer(context, true);
+                    PushEventsTransmitter.onRegistered(context, deviceRegistrationID);
+                    Log.w(TAG, "Registered for pushes: " + deviceRegistrationID);
+                    return;
+                }
+            } catch (Exception e)
             {
-                PushEventsTransmitter.onRegistered(context, deviceRegistrationID);
-                Log.w(TAG, "Registered for pushes: " + deviceRegistrationID);
+                // pass
             }
-        } catch (Exception e)
-        {
-            Log.w(TAG, "Registration error " + e.getMessage());
-            PushEventsTransmitter.onRegisterError(context, e.getMessage());
         }
 
+        PushEventsTransmitter.onRegisterError(context, "status code is " + res);
+        Log.w(TAG, "Registration error " + res);
     }
 
     public static void unregisterWithServer(final Context context, final String deviceRegistrationID)
     {
-        try
+        GCMRegistrar.setRegisteredOnServer(context, false);
+
+        int res;
+        Exception exception = new Exception();
+        for (int i = 0; i < MAX_TRIES; ++i)
         {
-            HttpResponse res = makeRequest(context, deviceRegistrationID, UNREGISTER_PATH);
-            if (res.getStatusLine().getStatusCode() != 200)
+            try
             {
-                Log.w(TAG, "Unregistration error " + String.valueOf(res.getStatusLine().getStatusCode()));
-                PushEventsTransmitter.onUnregisteredError(context, "status code is " + res.getStatusLine().getStatusCode());
-            }
-            else
+                res = makeRequest(context, deviceRegistrationID, UNREGISTER_PATH);
+                if (200 == res)
+                {
+                    PushEventsTransmitter.onUnregistered(context, deviceRegistrationID);
+                    Log.w(TAG, "Registered for pushes: " + deviceRegistrationID);
+                    return;
+                }
+            } catch (Exception e)
             {
-                PushEventsTransmitter.onUnregistered(context, deviceRegistrationID);
+                exception = e;
             }
-        } catch (Exception e)
-        {
-            Log.w(TAG, "Unegistration error " + e.getMessage());
-            PushEventsTransmitter.onUnregisteredError(context, e.getMessage());
         }
+
+        PushEventsTransmitter.onUnregisteredError(context, exception.getMessage());
     }
 
-    private static HttpResponse makeRequest(Context context, String deviceRegistrationID, String urlPath) throws
-            Exception
+    private static int makeRequest(Context context, String deviceRegistrationID, String urlPath) throws Exception
     {
-        DefaultHttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost(BASE_URL + urlPath);
-
-        JSONObject innerRequestJson = new JSONObject();
-
-        String deviceId = getDeviceUUID(context);
-        innerRequestJson.put("hw_id", deviceId);
-
-        Locale locale = Locale.getDefault();
-        String language = locale.getLanguage();
-
-        innerRequestJson.put("device_name", isTablet(context) ? "Tablet" : "Phone");
-        innerRequestJson.put("application", C2DMessaging.getApplicationId(context));
-        innerRequestJson.put("device_type", "3");
-        innerRequestJson.put("device_id", deviceRegistrationID);
-        innerRequestJson.put("language", language);
-        innerRequestJson.put("timezone",
-                             Calendar.getInstance().getTimeZone()
-                                     .getRawOffset() / 1000); // converting from milliseconds to seconds
-
-        JSONObject requestJson = new JSONObject();
-        requestJson.put("request", innerRequestJson);
-
-        httpPost.setHeader("Content-Type", "application/json; charset=utf-8");
-        httpPost.setEntity(new StringEntity(requestJson.toString(), "UTF-8"));
-
-        if (Log.isLoggable(TAG, Log.VERBOSE))
+        int result = 500;
+        OutputStream connectionOutput = null;
+        InputStream inputStream = null;
+        try
         {
-            Log.v(TAG, "POST request: " + requestJson.toString());
+            URL url = new URL(BASE_URL + urlPath);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+
+            connection.setDoOutput(true);
+
+
+            JSONObject innerRequestJson = new JSONObject();
+
+            String deviceId = getDeviceUUID(context);
+            innerRequestJson.put("hw_id", deviceId);
+
+            Locale locale = Locale.getDefault();
+            String language = locale.getLanguage();
+
+            innerRequestJson.put("device_name", isTablet(context) ? "Tablet" : "Phone");
+            innerRequestJson.put("application", PreferenceUtils.getApplicationId(context));
+            innerRequestJson.put("device_type", "3");
+            innerRequestJson.put("device_id", deviceRegistrationID);
+            innerRequestJson.put("language", language);
+            innerRequestJson.put("timezone",
+                                 Calendar.getInstance().getTimeZone()
+                                         .getRawOffset() / 1000); // converting from milliseconds to seconds
+
+            JSONObject requestJson = new JSONObject();
+            requestJson.put("request", innerRequestJson);
+
+            connection.setRequestProperty("Content-Length", String.valueOf(requestJson.toString().getBytes().length));
+
+            connectionOutput = connection.getOutputStream();
+            connectionOutput.write(requestJson.toString().getBytes());
+            connectionOutput.flush();
+            connectionOutput.close();
+
+            inputStream = new BufferedInputStream(connection.getInputStream());
+
+            ByteArrayOutputStream dataCache = new ByteArrayOutputStream();
+
+            // Fully read data
+            byte[] buff = new byte[1024];
+            int len;
+            while ((len = inputStream.read(buff)) >= 0)
+            {
+                dataCache.write(buff, 0, len);
+            }
+
+            result = connection.getResponseCode();
+            // Close streams
+            dataCache.close();
+
+            String jsonString = new String(dataCache.toByteArray()).trim();
+        } finally
+        {
+            if (null != inputStream)
+            {
+                inputStream.close();
+            }
+            if (null != connectionOutput)
+            {
+                connectionOutput.close();
+            }
         }
 
-        HttpResponse httpResponse = httpClient.execute(httpPost);
-        return httpResponse;
+        return result;
     }
 
     private static String getDeviceUUID(Context context)
