@@ -1,0 +1,243 @@
+//
+//  MessageActivity.java
+//
+// Pushwoosh Push Notifications SDK
+// www.pushwoosh.com
+//
+// MIT Licensed
+
+package com.arellomobile.android.push;
+
+import android.app.ActivityManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
+import com.google.android.gcm.GCMBaseIntentService;
+import com.google.android.gcm.GCMRegistrar;
+
+import java.util.List;
+
+public class PushGCMIntentService extends GCMBaseIntentService
+{
+    @SuppressWarnings("hiding")
+    private static final String TAG = "GCMIntentService";
+    private static boolean mSimpleNotification = true;
+
+    public PushGCMIntentService()
+    {
+        String senderId = PushManager.mSenderId;
+        Boolean simpleNotification = PushManager.mSimpleNotification;
+        if(null != simpleNotification)
+        {
+            mSimpleNotification = simpleNotification;
+        }
+        if (null == senderId)
+        {
+            senderId = "";
+        }
+        mSenderId = senderId;
+    }
+
+    @Override
+    protected void onRegistered(Context context, String registrationId)
+    {
+        Log.i(TAG, "Device registered: regId = " + registrationId);
+        DeviceRegistrar.registerWithServer(context, registrationId);
+    }
+
+    @Override
+    protected void onUnregistered(Context context, String registrationId)
+    {
+        Log.i(TAG, "Device unregistered");
+        if (GCMRegistrar.isRegisteredOnServer(context))
+        {
+            DeviceRegistrar.unregisterWithServer(context, registrationId);
+        }
+        else
+        {
+            // This callback results from the call to unregister made on
+            // ServerUtilities when the registration to the server failed.
+            Log.i(TAG, "Ignoring unregister callback");
+        }
+    }
+
+    @Override
+    protected void onMessage(Context context, Intent intent)
+    {
+        Log.i(TAG, "Received message");
+        // notifies user
+        generateNotification(context, intent);
+    }
+
+    @Override
+    protected void onDeletedMessages(Context context, int total)
+    {
+        Log.i(TAG, "Received deleted messages notification");
+
+        // TODO
+        Toast.makeText(context, "onDeletedMessages", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onError(Context context, String errorId)
+    {
+        Log.e(TAG, "Messaging registration error: " + errorId);
+        PushEventsTransmitter.onRegisterError(context, errorId);
+    }
+
+    @Override
+    protected boolean onRecoverableError(Context context, String errorId)
+    {
+        // log message
+        Log.i(TAG, "Received recoverable error: " + errorId);
+        return super.onRecoverableError(context, errorId);
+    }
+
+    private static void generateNotification(Context context, Intent intent)
+    {
+        Bundle extras = intent.getExtras();
+        if (extras == null)
+        {
+            return;
+        }
+
+        extras.putBoolean("foregroud", isAppOnForeground(context));
+
+        String title = (String) extras.get("title");
+        String url = (String) extras.get("h");
+        String link = (String) extras.get("l");
+
+        // empty message with no data
+        Intent notifyIntent = null;
+        if (link != null)
+        {
+            // we want main app class to be launched
+            notifyIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+            notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        else
+        {
+            notifyIntent = new Intent(context, PushHandlerActivity.class);
+            notifyIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            // pass all bundle
+            notifyIntent.putExtra("pushBundle", extras);
+        }
+
+        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // first string will appear on the status bar once when message is added
+        CharSequence appName = context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
+        if (null == appName)
+        {
+            appName = "";
+        }
+
+        String newMessageString = ": new message";
+        int resId = context.getResources().getIdentifier("new_push_message", "string", context.getPackageName());
+        if (0 != resId)
+        {
+            newMessageString = context.getString(resId);
+        }
+        Notification notification = new Notification(context.getApplicationInfo().icon, appName + newMessageString,
+                                                     System.currentTimeMillis());
+
+        // remove the notification from the status bar after it is selected
+        notification.flags |= Notification.FLAG_AUTO_CANCEL;
+
+        if (mSimpleNotification)
+        {
+            createSimpleNotification(context, notifyIntent, notification, appName, title, manager);
+        }
+        else
+        {
+            createMultyNotification(context, notifyIntent, notification, appName, title, manager);
+        }
+
+
+        String sound = (String) extras.get("s");
+        playPushNotificationSound(context, sound);
+    }
+
+    private static void createSimpleNotification(Context context, Intent notifyIntent, Notification notification,
+                                                 CharSequence appName, String title, NotificationManager manager)
+    {
+        PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notifyIntent,
+                                                                PendingIntent.FLAG_CANCEL_CURRENT);
+
+        // this will appear in the notifications list
+        notification.setLatestEventInfo(context, appName, title, contentIntent);
+        manager.notify(PushManager.MESSAGE_ID, notification);
+    }
+
+    private static void createMultyNotification(Context context, Intent notifyIntent, Notification notification,
+                                                CharSequence appName, String title, NotificationManager manager)
+    {
+        PendingIntent contentIntent = PendingIntent.getActivity(context, PushManager.MESSAGE_ID, notifyIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+
+        // this will appear in the notifications list
+        notification.setLatestEventInfo(context, appName, title, contentIntent);
+        manager.notify(PushManager.MESSAGE_ID++, notification);
+    }
+
+    private static void playPushNotificationSound(Context context, String sound)
+    {
+        if (sound == null)
+        {
+            return;
+        }
+
+        int soundId = context.getResources().getIdentifier(sound, "raw", context.getPackageName());
+        if (0 != soundId)
+        {
+            // if found valid resource id
+            MediaPlayer mediaPlayer = MediaPlayer.create(context, soundId);
+            if (null != mediaPlayer)
+            {
+                // if player created
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener()
+                {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer)
+                    {
+                        mediaPlayer.release();
+                    }
+                });
+                mediaPlayer.start();
+            }
+        }
+    }
+
+    private static boolean isAppOnForeground(Context context)
+    {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
+        if (appProcesses == null)
+        {
+            return false;
+        }
+
+        final String packageName = context.getPackageName();
+        for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses)
+        {
+            if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && appProcess
+                    .processName.equals(packageName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+}
+
