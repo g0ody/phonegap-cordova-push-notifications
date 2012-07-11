@@ -10,7 +10,21 @@
 <plugin name="PushNotifications" value="com.pushwoosh.test.plugin.pushnotifications.PushNotifications" onload="true"/>
 Don't forget to change the package name if you changed the package for the PushNotifications.java file.
 
-5. See the index.html and main.js sample for the Javascript integration.
+5. Register for push notifications.
+In PushNotification.js enter the correct Project ID and Pushwoosh App ID here:
+pushNotification.registerDevice({ projectid: "", appid : "" },
+
+Add method init() to the onload function in HTML:
+<body onload="init();" >
+
+In the init function add:
+function init() {
+    document.addEventListener("deviceready", initPushwoosh, true);
+ 
+    //rest of the code
+}
+
+initPushwoosh function is located in the PushNotification.js, please make sure you have this script included right after the cordova script.
 
 6. Handling push notification. This method gets called when push notification has been received.
 document.addEventListener('push-notification', function(event) {
