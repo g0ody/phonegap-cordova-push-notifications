@@ -100,7 +100,7 @@ public class PushManager
     /**
      * Note this will take affect only after PushGCMIntentService restart if it is already running
      */
-    public void setMultyNotificationMode()
+    public void setMultiNotificationMode()
     {
         mSimpleNotification = false;
     }

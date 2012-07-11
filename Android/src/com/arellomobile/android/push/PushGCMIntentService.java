@@ -16,6 +16,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -35,7 +37,7 @@ public class PushGCMIntentService extends GCMBaseIntentService
     {
         String senderId = PushManager.mSenderId;
         Boolean simpleNotification = PushManager.mSimpleNotification;
-        if(null != simpleNotification)
+        if (null != simpleNotification)
         {
             mSimpleNotification = simpleNotification;
         }
@@ -181,7 +183,8 @@ public class PushGCMIntentService extends GCMBaseIntentService
     private static void createMultyNotification(Context context, Intent notifyIntent, Notification notification,
                                                 CharSequence appName, String title, NotificationManager manager)
     {
-        PendingIntent contentIntent = PendingIntent.getActivity(context, PushManager.MESSAGE_ID, notifyIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent contentIntent = PendingIntent
+                .getActivity(context, PushManager.MESSAGE_ID, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         // this will appear in the notifications list
         notification.setLatestEventInfo(context, appName, title, contentIntent);
@@ -190,30 +193,65 @@ public class PushGCMIntentService extends GCMBaseIntentService
 
     private static void playPushNotificationSound(Context context, String sound)
     {
+        MediaPlayer mediaPlayer = null;
         if (sound == null)
         {
-            return;
+            // try to get default one
+            try
+            {
+                Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                Ringtone r = RingtoneManager.getRingtone(context.getApplicationContext(), notification);
+                if (null != r)
+                {
+                    r.play();
+                }
+            } catch (Exception e)
+            {
+                // A Uri that will point to the current default ringtone at any given time.
+                // If the current default ringtone is in the DRM provider
+                // and the caller does not have permission, the exception will be a FileNotFoundException
+                // (see javadoc for Settings.System.DEFAULT_RINGTONE_URI)
+            }
+        }
+        else
+        {
+            int soundId = context.getResources().getIdentifier(sound, "raw", context.getPackageName());
+            if (0 != soundId)
+            {
+                // if found valid resource id
+                mediaPlayer = MediaPlayer.create(context, soundId);
+            }
         }
 
-        int soundId = context.getResources().getIdentifier(sound, "raw", context.getPackageName());
-        if (0 != soundId)
+        playPushNotificationSound(mediaPlayer);
+    }
+
+    private static void playPushNotificationSound(MediaPlayer mediaPlayer)
+    {
+        if (null != mediaPlayer)
         {
-            // if found valid resource id
-            MediaPlayer mediaPlayer = MediaPlayer.create(context, soundId);
-            if (null != mediaPlayer)
+            // if player created
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.setLooping(false);
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener()
             {
-                // if player created
-                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener()
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer)
                 {
-                    @Override
-                    public void onCompletion(MediaPlayer mediaPlayer)
-                    {
-                        mediaPlayer.release();
-                    }
-                });
-                mediaPlayer.start();
-            }
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                }
+            });
+            mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener()
+            {
+                @Override
+                public void onSeekComplete(MediaPlayer mediaPlayer)
+                {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                }
+            });
+            mediaPlayer.start();
         }
     }
 

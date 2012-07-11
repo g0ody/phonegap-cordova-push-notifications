@@ -32,44 +32,6 @@ public class PushNotifications extends Plugin
 
     HashMap<String, String> callbackIds = new HashMap<String, String>();
 
-    private static PushNotifications instance = null;
-    private static String pushMessage = null;
-
-    public PushNotifications()
-    {
-        super();
-    }
-
-    /**
-     * Called when the system is about to start resuming a previous activity.
-     *
-     * @param multitasking Flag indicating if multitasking is turned on for app
-     */
-    public void onPause(boolean multitasking)
-    {
-        super.onPause(multitasking);
-        instance = null;
-    }
-
-    /**
-     * Called when the activity will start interacting with the user.
-     *
-     * @param multitasking Flag indicating if multitasking is turned on for app
-     */
-    public void onResume(boolean multitasking)
-    {
-        super.onResume(multitasking);
-        instance = this;
-
-        if (pushMessage != null)
-        {
-            String jsStatement = String
-                    .format("window.plugins.pushNotification.notificationCallback(%s);", pushMessage);
-            sendJavascript(jsStatement);
-            pushMessage = null;
-        }
-    }
-
     /**
      * Called when the activity receives a new intent.
      */
@@ -80,41 +42,14 @@ public class PushNotifications extends Plugin
         checkMessage(intent);
     }
 
+
+
     /**
      * The final call you receive before your activity is destroyed.
      */
     public void onDestroy()
     {
         super.onDestroy();
-
-        instance = null;
-    }
-
-    /**
-     * Called when a message is sent to plugin.
-     *
-     * @param id   The message id
-     * @param data The message data
-     */
-    public void onMessage(String id, Object data)
-    {
-        super.onMessage(id, data);
-    }
-
-    @Override
-    public void setContext(CordovaInterface ctx)
-    {
-        super.setContext(ctx);
-
-        if (pushMessage != null)
-        {
-            String jsStatement = String
-                    .format("window.plugins.pushNotification.notificationCallback(%s);", pushMessage);
-            sendJavascript(jsStatement);
-            pushMessage = null;
-        }
-
-        instance = this;
     }
 
     @Override
@@ -138,7 +73,7 @@ public class PushNotifications extends Plugin
             PushManager mPushManager = null;
             try
             {
-                mPushManager = new PushManager(ctx.getContext(), params.getString("appid"),
+                mPushManager = new PushManager(ctx.getActivity(), params.getString("appid"),
                                                params.getString("projectid"));
             } catch (JSONException e)
             {
@@ -147,10 +82,10 @@ public class PushNotifications extends Plugin
 
             try
             {
-                mPushManager.onStartup(null, ctx.getContext());
+                mPushManager.onStartup(null, ctx.getActivity());
             } catch (IllegalArgumentException e)
             {
-                Toast.makeText(ctx.getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(ctx.getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
 
             result = new PluginResult(Status.NO_RESULT);
@@ -165,7 +100,7 @@ public class PushNotifications extends Plugin
             result = new PluginResult(Status.NO_RESULT);
             result.setKeepCallback(true);
 
-            GCMRegistrar.unregister(ctx.getContext());
+            GCMRegistrar.unregister(ctx.getActivity());
             return result;
         }
 

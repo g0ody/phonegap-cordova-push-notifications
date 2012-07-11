@@ -6,27 +6,6 @@ var deviceInfo = function() {
     document.getElementById("width").innerHTML = screen.width;
     document.getElementById("height").innerHTML = screen.height;
     document.getElementById("colorDepth").innerHTML = screen.colorDepth;
-
-	var pushNotification = window.plugins.pushNotification;
-	// CHANGE projectid & appid
-	pushNotification.registerDevice({ projectid: "PROJECT_ID_FROM_GCM", appid : "PUSHWOOSH_APP_CODE" },
-									function(status) {
-										console.warn('registerDevice:%o', status);
-										console.warn(JSON.stringify(['registerDevice', status]));
-									},
-									function(status) {
-									    console.warn('failed to register :%o', status);
-									    console.warn(JSON.stringify(['failed to register ', status]));
-									});
-									
-	document.addEventListener('push-notification', function(event) {
-	                            var title = event.notification.title;
-	                            var userData = event.notification.userdata;
-
-								console.warn('user data: ' + JSON.stringify(userData));
-								navigator.notification.alert(title);
-							  });
-									
 };
 
 var getLocation = function() {
@@ -164,6 +143,7 @@ function init() {
     // doesn't have a scroll button
     // document.addEventListener("touchmove", preventBehavior, false);
     document.addEventListener("deviceready", deviceInfo, true);
+    document.addEventListener("deviceready", initPushwoosh, true);
 }
 
 function javascriptFunc() {
