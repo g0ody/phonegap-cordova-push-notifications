@@ -85,8 +85,10 @@ public class PushNotifications extends Plugin
                 mPushManager.onStartup(null, ctx.getActivity());
             } catch (IllegalArgumentException e)
             {
-                Toast.makeText(ctx.getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                return new PluginResult(Status.ERROR);
             }
+
+            checkMessage(ctx.getActivity().getIntent());
 
             result = new PluginResult(Status.NO_RESULT);
             result.setKeepCallback(true);
@@ -100,7 +102,14 @@ public class PushNotifications extends Plugin
             result = new PluginResult(Status.NO_RESULT);
             result.setKeepCallback(true);
 
-            GCMRegistrar.unregister(ctx.getActivity());
+            try
+            {
+                GCMRegistrar.unregister(ctx.getActivity());
+            } catch (Exception e)
+            {
+                return new PluginResult(Status.ERROR);
+            }
+
             return result;
         }
 
