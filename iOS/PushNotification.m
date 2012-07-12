@@ -559,14 +559,15 @@
 	//	NSString *customData = [userInfo objectForKey:@"u"];
 	NSString *linkUrl = [userInfo objectForKey:@"l"];
 	
+	//Do not display alert for PhoneGap plugin, just pass the push to the javascript
 	//the app is running, display alert only
-	if(!isPushOnStart) {
+/*	if(!isPushOnStart) {
 		UIAlertView *alert = [[UIAlertView alloc] initWithTitle:self.appName message:alertMsg delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"OK", nil];
 		[alert show];
 		[alert release];
 		return YES;
 	}
-	
+*/	
 	if(htmlPageId) {
 		[self showPushPage:htmlPageId];
 	}
