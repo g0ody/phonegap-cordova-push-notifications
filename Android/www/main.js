@@ -145,31 +145,3 @@ function init() {
     document.addEventListener("deviceready", deviceInfo, true);
     document.addEventListener("deviceready", initPushwoosh, true);
 }
-
-function javascriptFunc() {
-	alert("hello");
-}
-
-function showAlert(msg) {
-	alert(msg);
-}
-
-function onPushReceive(msg) {
-	alert(msg);
-}
-
-function onRegister(msg) {
-	alert(msg);
-}
-
-function onUnregister(msg) {
-	alert(msg);
-}
-
-function onRegisterError(msg) {
-	alert(msg);
-}
-
-function onUnregisterError(msg) {
-	alert(msg);
-}

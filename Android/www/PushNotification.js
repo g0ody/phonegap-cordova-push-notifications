@@ -39,19 +39,21 @@ function initPushwoosh()
 	// CHANGE projectid & appid
 	pushNotification.registerDevice({ projectid: "GCM_PROJECT_ID", appid : "PUSHWOOSH_APP_ID" },
 									function(status) {
-										console.warn('registerDevice:%o', status);
-										console.warn(JSON.stringify(['registerDevice', status]));
+										var pushToken = status;
+										console.warn('push token: ' + pushToken);
 									},
 									function(status) {
-									    console.warn('failed to register :%o', status);
 									    console.warn(JSON.stringify(['failed to register ', status]));
 									});
 
 	document.addEventListener('push-notification', function(event) {
 	                            var title = event.notification.title;
 	                            var userData = event.notification.userdata;
-
-								console.warn('user data: ' + JSON.stringify(userData));
+	                            
+	                            if(typeof(userData) != "undefined") {
+									console.warn('user data: ' + JSON.stringify(userData));
+								}
+									
 								navigator.notification.alert(title);
 							  });
 

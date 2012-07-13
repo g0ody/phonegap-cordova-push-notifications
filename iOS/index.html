@@ -62,6 +62,7 @@
 			invokeString = invokeString.replace(/\'/g,'\"')
 			var notification = JSON.parse(invokeString);
 			navigator.notification.alert(notification.aps.alert);
+			invokeString = "";
 		}
 
 		var pushNotification = window.plugins.pushNotification;

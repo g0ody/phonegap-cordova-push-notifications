@@ -83,7 +83,7 @@ public class PushNotifications extends Plugin
             try
             {
                 mPushManager.onStartup(null, ctx.getActivity());
-            } catch (IllegalArgumentException e)
+            } catch (java.lang.RuntimeException e)
             {
                 return new PluginResult(Status.ERROR);
             }
