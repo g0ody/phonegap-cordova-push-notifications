@@ -40,9 +40,21 @@
 		NSDictionary * userInfo = [launchOptions objectForKey:UIApplicationLaunchOptionsRemoteNotificationKey];	
 		[pushHandler.pushManager handlePushReceived:userInfo];
 
+		
+		NSString* u = [userInfo objectForKey:@"u"];
+		if (u) {
+			NSDictionary *dict = [u objectFromJSONString];
+			if (dict) {
+				NSMutableDictionary *pn = [NSMutableDictionary dictionaryWithDictionary:userInfo];
+				[pn setObject:dict forKey:@"u"];
+				userInfo = pn;
+			}
+		}
+
+		
 		if(userInfo) {
 			NSString *jsonString = [userInfo JSONString];
-			jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\"" withString:@"'"];
+			jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
 			self.viewController.invokeString = jsonString;
 		}
 	}
@@ -168,8 +180,18 @@
 	//reset badge counter
 	[[UIApplication sharedApplication] setApplicationIconBadgeNumber:0];
 	
+	NSString* u = [pushNotification objectForKey:@"u"];
+	if (u) {
+		NSDictionary *dict = [u objectFromJSONString];
+		if (dict) {
+			NSMutableDictionary *pn = [NSMutableDictionary dictionaryWithDictionary:pushNotification];
+			[pn setObject:dict forKey:@"u"];
+			pushNotification = pn;
+		}
+	}
+	
 	NSString *jsonString = [pushNotification JSONString];
-	NSString *jsStatement = [NSString stringWithFormat:@"window.plugins.pushNotification.notificationCallback('%@');", jsonString];
+	NSString *jsStatement = [NSString stringWithFormat:@"window.plugins.pushNotification.notificationCallback(%@);", jsonString];
 	[self writeJavascript:jsStatement];
 }
 
