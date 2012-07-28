@@ -10,11 +10,7 @@
 // MIT Licensed
 
 #import <Foundation/Foundation.h>
-#ifdef CORDOVA_FRAMEWORK
-	#import <Cordova/CDVPlugin.h>
-#else
-	#import "CDVPlugin.h"
-#endif
+#import <Cordova/CDVPlugin.h>
 
 //Pushwoosh SDK START
 @class PushNotificationManager;
@@ -69,10 +65,12 @@
 
 	NSMutableDictionary* callbackIds;
 	PushNotificationManager *pushManager;
+	NSString *startPushData;
 }
 
 @property (nonatomic, retain) NSMutableDictionary* callbackIds;
 @property (nonatomic, retain) PushNotificationManager *pushManager;
+@property (nonatomic, copy) NSString *startPushData;
 
 - (void)registerDevice:(NSMutableArray *)arguments withDict:(NSMutableDictionary*)options;
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSString*)deviceToken;

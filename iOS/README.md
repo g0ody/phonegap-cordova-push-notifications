@@ -20,31 +20,23 @@ To register for push notifications you have to call:
 
 var pushNotification = window.plugins.pushNotification;
 pushNotification.registerDevice({alert:true, badge:true, sound:true, appid:"PUSHWOOSH_APP_CODE", appname:"APP_NAME"},
-                                function(status) {
-                                    console.warn('registerDevice:%o', status);
-                                    navigator.notification.alert(JSON.stringify(['registerDevice', status]));
-                                },
-                                function(status) {
-                                console.warn('failed to register :%o', status);
-                                navigator.notification.alert(JSON.stringify(['failed to register ', status]));
-                                });
+								function(status) {
+									var deviceToken = status['deviceToken'];
+                                    console.warn('registerDevice: ' + deviceToken);
+								},
+								function(status) {
+                                    console.warn('failed to register : ' + JSON.stringify(status));
+                                    navigator.notification.alert(JSON.stringify(['failed to register ', status]));
+								});
 
 
-NOTE: Push notifications must be handled in two places:
-
-a. In the onBodyLoad function. This method gets called when push notification has been received.
+NOTE: Handling push notifications:
+In the onBodyLoad function add the following code. This method gets called when push notification has been received.
 document.addEventListener('push-notification', function(event) {
-							console.warn('push-notification!: ' + event.notification);
-							navigator.notification.alert(JSON.stringify(['push-notification!', event.notification]));
+						var notification = event.notification;
+						navigator.notification.alert(notification.aps.alert);
+						pushNotification.setApplicationIconBadgeNumber(0);
 						  });
-
-b. In the onDeviceReady function. This code gets called when the application has been started in response to the push notification.
-
-if(typeof(invokeString) != "undefined" && invokeString.length > 0 &&  invokeString[0] == '{') {
-	//push notification
-	console.warn('push-notification!: ' + invokeString);
-	navigator.notification.alert(JSON.stringify(['push-notification!', invokeString]));
-}
 
 7. See PushNotification.js for more information on the interface
 

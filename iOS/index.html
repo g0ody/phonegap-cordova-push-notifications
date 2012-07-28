@@ -55,14 +55,6 @@
 	function onDeviceReady()
 	{
 		// do your thing!
-		navigator.notification.alert("Cordova is working");
-
-		if(typeof(invokeString) != "undefined" && invokeString.length > 0 &&  invokeString[0] == '{') {
-			//push notification
-			var notification = JSON.parse(invokeString);
-			navigator.notification.alert(notification.aps.alert);
-			invokeString = "";
-		}
 
 		var pushNotification = window.plugins.pushNotification;
 		pushNotification.registerDevice({alert:true, badge:true, sound:true, appid:"PUSHWOOSH_APP_CODE", appname:"APP_NAME"},

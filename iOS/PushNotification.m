@@ -10,14 +10,34 @@
 // MIT Licensed
 
 #import "PushNotification.h"
-#ifdef CORDOVA_FRAMEWORK
-	#import <Cordova/JSONKit.h>
-#else
-	#import "JSONKit.h"
-#endif
+#import <Cordova/JSONKit.h>
 
 #import "AppDelegate.h"
+#import "MainViewController.h"
 #import <objc/runtime.h>
+
+@interface MainViewController(PushNotifications)
+- (void) newWebViewDidFinishLoad:(UIWebView*) theWebView;
+@end
+
+@implementation MainViewController(PushNotifications)
+- (void) newWebViewDidFinishLoad:(UIWebView*) theWebView {
+	[self newWebViewDidFinishLoad:theWebView];
+	
+	AppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+	PushNotification *pushHandler = [delegate.viewController getCommandInstance:@"PushNotification"];
+	if(pushHandler.startPushData) {
+		NSString *jsStatement = [NSString stringWithFormat:@"window.plugins.pushNotification.notificationCallback(%@);", pushHandler.startPushData];
+		[pushHandler writeJavascript:[NSString stringWithFormat:@"setTimeout(function() { %@; }, 0);", jsStatement]];
+		pushHandler.startPushData = nil;
+	}
+}
+
++ (void)load {
+	method_exchangeImplementations(class_getInstanceMethod(self, @selector(webViewDidFinishLoad:)), class_getInstanceMethod(self, @selector(newWebViewDidFinishLoad:)));	
+}
+
+@end
 
 @interface AppDelegate(PushNotifications)
 - (void)application:(UIApplication *)app didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)devToken;
@@ -51,11 +71,10 @@
 			}
 		}
 
-		
 		if(userInfo) {
 			NSString *jsonString = [userInfo JSONString];
-			jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
-			self.viewController.invokeString = jsonString;
+			//the webview is not loaded yet, keep it for the callback
+			pushHandler.startPushData = jsonString;
 		}
 	}
 	
@@ -92,7 +111,7 @@
 @implementation PushNotification
 
 @synthesize callbackIds = _callbackIds;
-@synthesize pushManager;
+@synthesize pushManager, startPushData;
 
 - (NSMutableDictionary*)callbackIds {
 	if(_callbackIds == nil) {
@@ -192,7 +211,7 @@
 	
 	NSString *jsonString = [pushNotification JSONString];
 	NSString *jsStatement = [NSString stringWithFormat:@"window.plugins.pushNotification.notificationCallback(%@);", jsonString];
-	[self writeJavascript:jsStatement];
+	[self writeJavascript:[NSString stringWithFormat:@"setTimeout(function() { %@; }, 0);", jsStatement]];
 }
 
 + (NSMutableDictionary*)getRemoteNotificationStatus {
@@ -294,6 +313,7 @@
 
 - (void) dealloc {
 	self.pushManager = nil;
+	self.startPushData = nil;
 
 	[_callbackIds dealloc];
 	[super dealloc];
