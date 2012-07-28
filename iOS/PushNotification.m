@@ -16,29 +16,6 @@
 #import "MainViewController.h"
 #import <objc/runtime.h>
 
-@interface MainViewController(PushNotifications)
-- (void) newWebViewDidFinishLoad:(UIWebView*) theWebView;
-@end
-
-@implementation MainViewController(PushNotifications)
-- (void) newWebViewDidFinishLoad:(UIWebView*) theWebView {
-	[self newWebViewDidFinishLoad:theWebView];
-	
-	AppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-	PushNotification *pushHandler = [delegate.viewController getCommandInstance:@"PushNotification"];
-	if(pushHandler.startPushData) {
-		NSString *jsStatement = [NSString stringWithFormat:@"window.plugins.pushNotification.notificationCallback(%@);", pushHandler.startPushData];
-		[pushHandler writeJavascript:[NSString stringWithFormat:@"setTimeout(function() { %@; }, 0);", jsStatement]];
-		pushHandler.startPushData = nil;
-	}
-}
-
-+ (void)load {
-	method_exchangeImplementations(class_getInstanceMethod(self, @selector(webViewDidFinishLoad:)), class_getInstanceMethod(self, @selector(newWebViewDidFinishLoad:)));	
-}
-
-@end
-
 @interface AppDelegate(PushNotifications)
 - (void)application:(UIApplication *)app didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)devToken;
 - (void)application:(UIApplication *)app didFailToRegisterForRemoteNotificationsWithError:(NSError *)err;
@@ -137,6 +114,16 @@
 		pushManager.delegate = self;
 	}
 	return pushManager;
+}
+
+- (void)onDeviceReady:(NSMutableArray *)arguments withDict:(NSMutableDictionary*)options {
+	AppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+	PushNotification *pushHandler = [delegate.viewController getCommandInstance:@"PushNotification"];
+	if(pushHandler.startPushData) {
+		NSString *jsStatement = [NSString stringWithFormat:@"window.plugins.pushNotification.notificationCallback(%@);", pushHandler.startPushData];
+		[pushHandler writeJavascript:[NSString stringWithFormat:@"setTimeout(function() { %@; }, 0);", jsStatement]];
+		pushHandler.startPushData = nil;
+	}
 }
 
 - (void)registerDevice:(NSMutableArray *)arguments withDict:(NSMutableDictionary *)options {

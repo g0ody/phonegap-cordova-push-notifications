@@ -15,28 +15,21 @@
 5. Add cp.pushwoosh.com to <strong>hosts</strong> in Cordova.plist/ExternalHosts (or you can simply add wildcard *).
 
 6. See the index.html sample for the Javascript integration.
-To register for push notifications you have to call:
-(Replace PUSHWOOSH_APP_CODE with your Application Id from Pushwoosh and APP_NAME with your Application name)
 
-var pushNotification = window.plugins.pushNotification;
-pushNotification.registerDevice({alert:true, badge:true, sound:true, appid:"PUSHWOOSH_APP_CODE", appname:"APP_NAME"},
-								function(status) {
-									var deviceToken = status['deviceToken'];
-                                    console.warn('registerDevice: ' + deviceToken);
-								},
-								function(status) {
-                                    console.warn('failed to register : ' + JSON.stringify(status));
-                                    navigator.notification.alert(JSON.stringify(['failed to register ', status]));
-								});
+In your <b>onDeviceReady</b> function add:
+initPushwoosh();
 
+Registering for push notifications:
+Replace PUSHWOOSH_APP_CODE with your Application Id from Pushwoosh and APP_NAME with your Application name in the initPushwoosh function.
 
 NOTE: Handling push notifications:
-In the onBodyLoad function add the following code. This method gets called when push notification has been received.
+You can find the push notifications handling code in the initPushwoosh function. See:
 document.addEventListener('push-notification', function(event) {
-						var notification = event.notification;
-						navigator.notification.alert(notification.aps.alert);
-						pushNotification.setApplicationIconBadgeNumber(0);
+						  var notification = event.notification;
+						  navigator.notification.alert(notification.aps.alert);
+						  pushNotification.setApplicationIconBadgeNumber(0);
 						  });
+
 
 7. See PushNotification.js for more information on the interface
 

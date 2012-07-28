@@ -73,6 +73,7 @@
 @property (nonatomic, copy) NSString *startPushData;
 
 - (void)registerDevice:(NSMutableArray *)arguments withDict:(NSMutableDictionary*)options;
+- (void)onDeviceReady:(NSMutableArray *)arguments withDict:(NSMutableDictionary*)options;
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSString*)deviceToken;
 - (void)didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
 + (NSMutableDictionary*)getRemoteNotificationStatus;
