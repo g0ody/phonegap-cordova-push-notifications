@@ -18,6 +18,10 @@
 		cordova.exec(success, fail, "PushNotifications", "registerDevice", config ? [config] : []);
 	};
 
+	PushNotification.prototype.unregisterDevice = function(success, fail) {
+		cordova.exec(success, fail, "PushNotifications", "unregisterDevice", []);
+	};
+
 	// Event spawned when a notification is received while the application is active
 	PushNotification.prototype.notificationCallback = function(notification) {
 		var ev = document.createEvent('HTMLEvents');

@@ -203,6 +203,7 @@ public class PushGCMIntentService extends GCMBaseIntentService
                 Ringtone r = RingtoneManager.getRingtone(context.getApplicationContext(), notification);
                 if (null != r)
                 {
+                    r.setStreamType(AudioManager.STREAM_NOTIFICATION);
                     r.play();
                 }
             } catch (Exception e)

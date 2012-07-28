@@ -68,6 +68,7 @@ public class PushNotifications extends Plugin
                 params = data.getJSONObject(0);
             } catch (JSONException e)
             {
+            	e.printStackTrace();
                 return new PluginResult(Status.ERROR);
             }
             PushManager mPushManager = null;
@@ -77,6 +78,7 @@ public class PushNotifications extends Plugin
                                                params.getString("projectid"));
             } catch (JSONException e)
             {
+            	e.printStackTrace();
                 return new PluginResult(Status.ERROR);
             }
 
@@ -85,6 +87,7 @@ public class PushNotifications extends Plugin
                 mPushManager.onStartup(null, ctx.getActivity());
             } catch (java.lang.RuntimeException e)
             {
+            	e.printStackTrace();
                 return new PluginResult(Status.ERROR);
             }
 
