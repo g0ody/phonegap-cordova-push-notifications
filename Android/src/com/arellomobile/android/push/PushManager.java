@@ -35,7 +35,9 @@ public class PushManager
 
     private Context mContext;
     private Bundle mLastBundle;
-    public static Boolean mSimpleNotification;
+    public static Boolean sSimpleNotification;
+    public static SoundType sSoundType = SoundType.DEFAULT_MODE;
+    public static VibrateType sVibrateType = VibrateType.DEFAULT_MODE;
 
     PushManager(Context context)
     {
@@ -102,7 +104,7 @@ public class PushManager
      */
     public void setMultiNotificationMode()
     {
-        mSimpleNotification = false;
+        sSimpleNotification = false;
     }
 
     /**
@@ -110,7 +112,17 @@ public class PushManager
      */
     public void setSimpleNotificationMode()
     {
-        mSimpleNotification = true;
+        sSimpleNotification = true;
+    }
+
+    public void setSoundNotificationType(SoundType soundNotificationType)
+    {
+        sSoundType = soundNotificationType;
+    }
+
+    public void setVibrateNotificationType(VibrateType vibrateNotificationType)
+    {
+        sVibrateType = vibrateNotificationType;
     }
 
     private void checkNotNullOrEmpty(String reference, String name)

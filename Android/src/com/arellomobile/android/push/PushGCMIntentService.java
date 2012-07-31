@@ -20,6 +20,7 @@ import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
 import com.google.android.gcm.GCMBaseIntentService;
@@ -36,7 +37,7 @@ public class PushGCMIntentService extends GCMBaseIntentService
     public PushGCMIntentService()
     {
         String senderId = PushManager.mSenderId;
-        Boolean simpleNotification = PushManager.mSimpleNotification;
+        Boolean simpleNotification = PushManager.sSimpleNotification;
         if (null != simpleNotification)
         {
             mSimpleNotification = simpleNotification;
@@ -166,7 +167,35 @@ public class PushGCMIntentService extends GCMBaseIntentService
 
 
         String sound = (String) extras.get("s");
-        playPushNotificationSound(context, sound);
+        AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        if (PushManager.sSoundType == SoundType.ALWAYS || (am
+                .getRingerMode() == AudioManager.RINGER_MODE_NORMAL && PushManager.sSoundType == SoundType.DEFAULT_MODE))
+        {
+            // if always or normal type set
+            playPushNotificationSound(context, sound);
+        }
+        if (PushManager.sVibrateType == VibrateType.ALWAYS || (am
+                .getRingerMode() == AudioManager.RINGER_MODE_VIBRATE && PushManager.sVibrateType == VibrateType.DEFAULT_MODE))
+        {
+            makeVibrate(context);
+        }
+    }
+
+    private static void makeVibrate(Context context)
+    {
+        try
+        {
+            Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+            // Start immediately
+            // Vibrate for 200 milliseconds
+            // Sleep for 500 milliseconds
+            long[] pattern = {0, 300, 200, 300, 200};
+
+            v.vibrate(pattern, -1);
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private static void createSimpleNotification(Context context, Intent notifyIntent, Notification notification,

@@ -23,9 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Calendar;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Register/unregister with the App server.
@@ -169,10 +167,20 @@ public class DeviceRegistrar
         return result;
     }
 
+    private static List<String> sWrongAndroidDevices;
+
+    static
+    {
+        sWrongAndroidDevices = new ArrayList<String>();
+
+        sWrongAndroidDevices.add("9774d56d682e549c");
+    }
+
     private static String getDeviceUUID(Context context)
     {
         final String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-        if (null != androidId)
+        // see http://code.google.com/p/android/issues/detail?id=10603
+        if (null != androidId && !sWrongAndroidDevices.contains(androidId))
         {
             return androidId;
         }
