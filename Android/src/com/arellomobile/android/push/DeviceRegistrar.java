@@ -42,9 +42,10 @@ public class DeviceRegistrar
     private static final String SHARED_KEY = "deviceid";
     private static final String SHARED_PREF_NAME = "com.arellomobile.android.push.deviceid";
 
-    public static void registerWithServer(final Context context, final String deviceRegistrationID)
+    static void registerWithServer(final Context context, final String deviceRegistrationID)
     {
         int res = 0;
+        Exception exception = new Exception();
         for (int i = 0; i < MAX_TRIES; ++i)
         {
             try
@@ -59,15 +60,15 @@ public class DeviceRegistrar
                 }
             } catch (Exception e)
             {
-                // pass
+                exception = e;
             }
         }
 
-        PushEventsTransmitter.onRegisterError(context, "status code is " + res);
-        Log.w(TAG, "Registration error " + res);
+        PushEventsTransmitter.onRegisterError(context, "status code is " + res + "\n error: " + exception.getMessage());
+        Log.w(TAG, "Registration error " + exception.getMessage());
     }
 
-    public static void unregisterWithServer(final Context context, final String deviceRegistrationID)
+    static void unregisterWithServer(final Context context, final String deviceRegistrationID)
     {
         GCMRegistrar.setRegisteredOnServer(context, false);
 
@@ -81,7 +82,7 @@ public class DeviceRegistrar
                 if (200 == res)
                 {
                     PushEventsTransmitter.onUnregistered(context, deviceRegistrationID);
-                    Log.w(TAG, "Registered for pushes: " + deviceRegistrationID);
+                    Log.w(TAG, "Unregistered for pushes: " + deviceRegistrationID);
                     return;
                 }
             } catch (Exception e)
@@ -91,6 +92,7 @@ public class DeviceRegistrar
         }
 
         PushEventsTransmitter.onUnregisteredError(context, exception.getMessage());
+        Log.w(TAG, "Unregistration error " + exception.getMessage());
     }
 
     private static int makeRequest(Context context, String deviceRegistrationID, String urlPath) throws Exception

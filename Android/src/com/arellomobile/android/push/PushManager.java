@@ -11,6 +11,8 @@ package com.arellomobile.android.push;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import com.google.android.gcm.GCMRegistrar;
 import org.json.JSONException;
@@ -35,9 +37,13 @@ public class PushManager
 
     private Context mContext;
     private Bundle mLastBundle;
-    public static Boolean sSimpleNotification;
-    public static SoundType sSoundType = SoundType.DEFAULT_MODE;
-    public static VibrateType sVibrateType = VibrateType.DEFAULT_MODE;
+    static Boolean sSimpleNotification;
+    static SoundType sSoundType = SoundType.DEFAULT_MODE;
+    static VibrateType sVibrateType = VibrateType.DEFAULT_MODE;
+
+
+    private static final Object mSyncObj = new Object();
+    private static AsyncTask<Void, Void, Void> mAsyncTask;
 
     PushManager(Context context)
     {
@@ -93,10 +99,35 @@ public class PushManager
 
             if (!oldAppId.equals(mAppId) || savedInstanceState == null)
             {
+                cancelPrevRegisterTask();
+
                 // if not register yet or an other id detected
-                DeviceRegistrar.registerWithServer(context, regId);
+                mAsyncTask = getRegisterAsyncTask(context, regId);
+                if (Build.VERSION.SDK_INT >= 11)
+                {
+                    // see executeOnExecutor min sdk version
+                    mAsyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, (Void) null);
+                }
+                else
+                {
+                    mAsyncTask.execute((Void) null);
+                }
             }
         }
+    }
+
+    private AsyncTask<Void, Void, Void> getRegisterAsyncTask(final Context context, final String regId)
+    {
+        return new AsyncTask<Void, Void, Void>()
+        {
+            @Override
+            protected Void doInBackground(Void... aVoids)
+            {
+                DeviceRegistrar.registerWithServer(context, regId);
+
+                return null;
+            }
+        };
     }
 
     /**
@@ -146,7 +177,21 @@ public class PushManager
 
     public void unregister()
     {
+        cancelPrevRegisterTask();
+
         GCMRegistrar.unregister(mContext);
+    }
+
+    private void cancelPrevRegisterTask()
+    {
+        synchronized (mSyncObj)
+        {
+            if (null != mAsyncTask)
+            {
+                mAsyncTask.cancel(true);
+            }
+            mAsyncTask = null;
+        }
     }
 
     public String getCustomData()
