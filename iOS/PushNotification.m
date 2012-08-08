@@ -13,7 +13,6 @@
 #import <Cordova/JSONKit.h>
 
 #import "AppDelegate.h"
-#import "MainViewController.h"
 #import <objc/runtime.h>
 
 @interface AppDelegate(PushNotifications)
@@ -327,6 +326,7 @@
 @implementation PushNotificationManager
 
 @synthesize appCode, appName, navController, pushNotifications, delegate;
+@synthesize supportedOrientations;
 
 - (NSString *) stringFromMD5: (NSString *)val{
     
@@ -422,8 +422,10 @@
 
 - (id) initWithApplicationCode:(NSString *)_appCode appName:(NSString *)_appName{
 	if(self = [super init]) {
+		self.supportedOrientations = PWOrientationPortrait | PWOrientationPortraitUpsideDown | PWOrientationLandscapeLeft | PWOrientationLandscapeRight;
 		self.appCode = _appCode;
 		self.appName = _appName;
+		self.navController = [UIApplication sharedApplication].keyWindow.rootViewController;
 		internalIndex = 0;
 		pushNotifications = [[NSMutableDictionary alloc] init];
 	}
@@ -433,6 +435,7 @@
 
 - (id) initWithApplicationCode:(NSString *)_appCode navController:(UIViewController *) _navController appName:(NSString *)_appName{
 	if (self = [super init]) {
+		self.supportedOrientations = PWOrientationPortrait | PWOrientationPortraitUpsideDown | PWOrientationLandscapeLeft | PWOrientationLandscapeRight;
 		self.appCode = _appCode;
 		self.navController = _navController;
 		self.appName = _appName;
@@ -450,6 +453,7 @@
 - (void) showPushPage:(NSString *)pageId {
 	NSString *url = [NSString stringWithFormat:kServiceHtmlContentFormatUrl, pageId];
 	HtmlWebViewController *vc = [[HtmlWebViewController alloc] initWithURLString:url];
+	vc.supportedOrientations = supportedOrientations;
 	
 	// Create the navigation controller and present it modally.
 	UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:vc];
@@ -642,6 +646,7 @@
 @implementation HtmlWebViewController
 
 @synthesize webview, activityIndicator;
+@synthesize supportedOrientations;
 
 - (id)initWithURLString:(NSString *)url {
 	if(self = [super init]) {
@@ -658,6 +663,7 @@
 	
 	webview = [[UIWebView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
 	webview.delegate = self;
+	webview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	[self.view addSubview:webview];
 	
 	activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -665,7 +671,7 @@
 	activityIndicator.frame = CGRectMake(self.view.frame.size.width / 2.0 - activityIndicator.frame.size.width / 2.0, self.view.frame.size.height / 2.0 - activityIndicator.frame.size.height / 2.0, activityIndicator.frame.size.width, activityIndicator.frame.size.height);
 	[self.view addSubview:activityIndicator];
 	
-	//	[webview setBackgroundColor:[UIColor clearColor]];
+//	[webview setBackgroundColor:[UIColor clearColor]];
 	webview.opaque = YES;
 	webview.scalesPageToFit = NO;
 	
@@ -678,6 +684,16 @@
 	[urlToLoad release];
 	
     [super dealloc];
+}
+
+- (BOOL) shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
+	if ((toInterfaceOrientation == UIInterfaceOrientationPortrait && (supportedOrientations & PWOrientationPortrait)) ||
+		(toInterfaceOrientation == UIInterfaceOrientationPortrait && (supportedOrientations & PWOrientationPortraitUpsideDown)) ||
+		(toInterfaceOrientation == UIInterfaceOrientationLandscapeLeft && (supportedOrientations & PWOrientationLandscapeLeft)) || 
+		(toInterfaceOrientation == UIInterfaceOrientationLandscapeRight && (supportedOrientations & PWOrientationLandscapeRight))) {
+		return YES;
+	}
+	return NO;
 }
 
 - (void)webViewDidStartLoad:(UIWebView *)webView {

@@ -7,7 +7,7 @@
     <script type="text/javascript" src="PushNotification.js"></script>
 
 4. Add new entry to your "config.xml" (for Cordova 1.9 this is "plugins.xml")
-<plugin name="PushNotifications" value="com.pushwoosh.test.plugin.pushnotifications.PushNotifications" onload="true"/>
+<plugin name="PushNotification" value="com.pushwoosh.test.plugin.pushnotifications.PushNotifications" onload="true"/>
 Don't forget to change the package name if you changed the package for the PushNotifications.java file.
 
 5. Register for push notifications.

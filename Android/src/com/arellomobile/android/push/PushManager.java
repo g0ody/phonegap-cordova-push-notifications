@@ -103,14 +103,17 @@ public class PushManager
 
                 // if not register yet or an other id detected
                 mAsyncTask = getRegisterAsyncTask(context, regId);
-                if (Build.VERSION.SDK_INT >= 11)
+                if (null != mAsyncTask)
                 {
-                    // see executeOnExecutor min sdk version
-                    mAsyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, (Void) null);
-                }
-                else
-                {
-                    mAsyncTask.execute((Void) null);
+                    if (Build.VERSION.SDK_INT >= 11)
+                    {
+                        // see executeOnExecutor min sdk version
+                        V11ExecutorHelper.executeOnExecutor(mAsyncTask);
+                    }
+                    else
+                    {
+                        mAsyncTask.execute((Void) null);
+                    }
                 }
             }
         }
@@ -118,16 +121,41 @@ public class PushManager
 
     private AsyncTask<Void, Void, Void> getRegisterAsyncTask(final Context context, final String regId)
     {
-        return new AsyncTask<Void, Void, Void>()
+        try
         {
-            @Override
-            protected Void doInBackground(Void... aVoids)
-            {
-                DeviceRegistrar.registerWithServer(context, regId);
+            return new RegisterTask(context, regId);
+        } catch (ExceptionInInitializerError e)
+        {
+            // we are not in UI thread. Simple run our registration
+            DeviceRegistrar.registerWithServer(context, regId);
+            return null;
+        }
+    }
 
-                return null;
+    private static class RegisterTask extends AsyncTask<Void, Void, Void>
+    {
+        private Context mContext;
+        private String mRegId;
+
+        private RegisterTask(Context context, String regId)
+        {
+            mContext = context;
+            mRegId = regId;
+        }
+
+        @Override
+        protected Void doInBackground(Void... aVoids)
+        {
+            try
+            {
+                DeviceRegistrar.registerWithServer(mContext, mRegId);
+            } finally
+            {
+                mContext = null;
             }
-        };
+
+            return null;
+        }
     }
 
     /**

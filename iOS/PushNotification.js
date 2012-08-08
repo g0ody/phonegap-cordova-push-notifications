@@ -20,7 +20,7 @@
 
 	//Android Only----
 	PushNotification.prototype.unregisterDevice = function(success, fail) {
-		cordova.exec(success, fail, "PushNotifications", "unregisterDevice", []);
+		cordova.exec(success, fail, "PushNotification", "unregisterDevice", []);
 	};
 	//Android End----
 	

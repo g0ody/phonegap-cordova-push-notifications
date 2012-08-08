@@ -15,12 +15,35 @@
 
 	// Call this to register for push notifications and retreive a deviceToken
 	PushNotification.prototype.registerDevice = function(config, success, fail) {
-		cordova.exec(success, fail, "PushNotifications", "registerDevice", config ? [config] : []);
+		cordova.exec(success, fail, "PushNotification", "registerDevice", config ? [config] : []);
 	};
 
+	//Android Only----
 	PushNotification.prototype.unregisterDevice = function(success, fail) {
-		cordova.exec(success, fail, "PushNotifications", "unregisterDevice", []);
+		cordova.exec(success, fail, "PushNotification", "unregisterDevice", []);
 	};
+	//Android End----
+	
+	//iOS only----
+	PushNotification.prototype.onDeviceReady = function() {
+		cordova.exec(null, null, "PushNotification", "onDeviceReady", []);
+	};
+
+	// Call this to get a detailed status of remoteNotifications
+	PushNotification.prototype.getRemoteNotificationStatus = function(callback) {
+		cordova.exec(callback, callback, "PushNotification", "getRemoteNotificationStatus", []);
+	};
+
+	// Call this to set the application icon badge
+	PushNotification.prototype.setApplicationIconBadgeNumber = function(badge, callback) {
+		cordova.exec(callback, callback, "PushNotification", "setApplicationIconBadgeNumber", [{badge: badge}]);
+	};
+
+	// Call this to clear all notifications from the notification center
+	PushNotification.prototype.cancelAllLocalNotifications = function(callback) {
+		cordova.exec(callback, callback, "PushNotification", "cancelAllLocalNotifications", []);
+	};
+	//iOS End----
 
 	// Event spawned when a notification is received while the application is active
 	PushNotification.prototype.notificationCallback = function(notification) {

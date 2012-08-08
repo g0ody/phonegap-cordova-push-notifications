@@ -24,7 +24,6 @@ import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
 import com.google.android.gcm.GCMBaseIntentService;
-import com.google.android.gcm.GCMRegistrar;
 
 import java.util.List;
 
@@ -60,16 +59,7 @@ public class PushGCMIntentService extends GCMBaseIntentService
     protected void onUnregistered(Context context, String registrationId)
     {
         Log.i(TAG, "Device unregistered");
-        if (GCMRegistrar.isRegisteredOnServer(context))
-        {
-            DeviceRegistrar.unregisterWithServer(context, registrationId);
-        }
-        else
-        {
-            // This callback results from the call to unregister made on
-            // ServerUtilities when the registration to the server failed.
-            Log.i(TAG, "Ignoring unregister callback");
-        }
+        DeviceRegistrar.unregisterWithServer(context, registrationId);
     }
 
     @Override

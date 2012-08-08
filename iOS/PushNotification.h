@@ -25,6 +25,12 @@
 - (void) onPushAccepted:(PushNotificationManager *)pushManager withNotification:(NSDictionary *)pushNotification;
 @end
 
+typedef enum enumHtmlPageSupportedOrientations {
+	PWOrientationPortrait = 1 << 0,
+	PWOrientationPortraitUpsideDown = 1 << 1,
+	PWOrientationLandscapeLeft = 1 << 2,
+	PWOrientationLandscapeRight = 1 << 3,
+} PWSupportedOrientations;
 
 @interface PushNotificationManager : NSObject {
 	NSString *appCode;
@@ -41,6 +47,7 @@
 @property (nonatomic, assign) UIViewController *navController;
 @property (nonatomic, retain) NSDictionary *pushNotifications;
 @property (nonatomic, assign) NSObject<PushNotificationDelegate> *delegate;
+@property (nonatomic, assign) PWSupportedOrientations supportedOrientations;
 
 - (id) initWithApplicationCode:(NSString *)appCode appName:(NSString *)appName;
 - (id) initWithApplicationCode:(NSString *)appCode navController:(UIViewController *) navController appName:(NSString *)appName;
@@ -95,6 +102,7 @@
 
 @property (nonatomic, retain) IBOutlet UIWebView *webview;
 @property (nonatomic, retain) IBOutlet UIActivityIndicatorView *activityIndicator;
+@property (nonatomic, assign) PWSupportedOrientations supportedOrientations;
 
 @end
 //Pushwoosh SDK END
