@@ -1,46 +1,4 @@
 // Cordova Android Pushwoosh Push Notifications plugin
 // (c) Pushwoosh, 2012
 
-1. Add "PushNotifications.java" from the plugin folder to your project.
-2. Add the PushNotification.js file from the "www" folder to your "www" folder on disk
-3. Add the reference to the PushNotification.js file using `<script>` tags in your html file(s):
-    <script type="text/javascript" src="PushNotification.js"></script>
-
-4. Add new entry to your "config.xml" (for Cordova 1.9 this is "plugins.xml")
-<plugin name="PushNotification" value="com.pushwoosh.test.plugin.pushnotifications.PushNotifications" onload="true"/>
-Don't forget to change the package name if you changed the package for the PushNotifications.java file.
-
-5. Register for push notifications.
-In PushNotification.js enter the correct Project ID and Pushwoosh App ID here:
-pushNotification.registerDevice({ projectid: "", appid : "" },
-
-Add method init() to the onload function in HTML:
-<body onload="init();" >
-
-In the init function add:
-function init() {
-    document.addEventListener("deviceready", initPushwoosh, true);
- 
-    //rest of the code
-}
-
-initPushwoosh function is located in the PushNotification.js, please make sure you have this script included right after the cordova script.
-
-6. Handling push notification. This method gets called when push notification has been received.
-document.addEventListener('push-notification', function(event) {
-                            var title = event.notification.title;
-                            var userData = event.notification.userdata;
-
-							console.warn('user data: ' + JSON.stringify(userData));
-							navigator.notification.alert(title);
-						  });
-
-6. See PushNotification.js for more information on the interface
-
-7. Add <access origin="https://cp.pushwoosh.com" subdomains="true" /> to the cordova.xml
-
-8. Modify AndroidManifest.xml as specified here:
-http://www.pushwoosh.com/programming-push-notification/android-gcm-push-notifications-guide/
-Follow the step 9.
-
-P.S. lib folder contains already compiled library (.jar) of the source code
+See: http://www.pushwoosh.com/programming-push-notification/android-gcm-push-notifications-guide/
