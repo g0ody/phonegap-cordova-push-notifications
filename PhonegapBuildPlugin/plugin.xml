@@ -88,6 +88,10 @@
             <plugin name="PushNotification"
 			value="com.pushwoosh.test.plugin.pushnotifications.PushNotifications" onload="true"/>
         </config-file>
+
+		<config-file target="res/xml/cordova.xml" parent="/cordova">
+            <access origin="https://cp.pushwoosh.com" subdomains="true" />
+        </config-file>
 		
 		<source-file src="src/android/src/com/pushwoosh/test/plugin/pushnotifications/PushNotifications.java"
 		        target-dir="src/com/pushwoosh/test/plugin/pushnotifications" />
@@ -180,6 +184,8 @@
     <platform name="ios">
         <plugins-plist key="PushNotification"
                     string="PushNotification" />
+
+        <access origin="*.pushwoosh.com" />
 
         <header-file src="PushNotification.h" />
         <source-file src="PushNotification.m" />
