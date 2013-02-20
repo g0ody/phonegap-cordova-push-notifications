@@ -15,6 +15,8 @@
 #import "PWPushStatRequest.h"
 #import "PWGetNearestZoneRequest.h"
 #import "PWApplicationEventRequest.h"
+#import "PW_SBJsonParser.h"
+#import "PW_SBJsonWriter.h"
 
 #include <sys/socket.h> // Per msqr
 #include <sys/sysctl.h>
@@ -108,6 +110,8 @@
 #pragma mark -
 #pragma mark Public Methods
 
+#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
+
 - (NSString *) uniqueDeviceIdentifier{
     NSString *macaddress = [self macaddress];
     NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
@@ -119,6 +123,17 @@
 }
 
 - (NSString *) uniqueGlobalDeviceIdentifier{
+	// >= iOS6 return identifierForVendor
+	UIDevice *device = [UIDevice currentDevice];
+	
+	if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"6.1")) {
+		if ([device respondsToSelector:@selector(identifierForVendor)] && [NSUUID class]) {
+			NSUUID *uuid = [device identifierForVendor];
+			return [uuid UUIDString];
+		}
+	}
+	
+	// Fallback on macaddress
     NSString *macaddress = [self macaddress];
     NSString *uniqueIdentifier = [self stringFromMD5:macaddress];
     
@@ -726,7 +741,10 @@ static PushNotificationManager * instance = nil;
 		
 		NSString* u = [userInfo objectForKey:@"u"];
 		if (u) {
-			NSDictionary *dict = [u cdvjk_objectFromJSONString];
+			PW_SBJsonParser * json = [[PW_SBJsonParser alloc] init];
+			NSDictionary *dict =[json objectWithString:u];
+			[json release]; json = nil;
+
 			if (dict) {
 				NSMutableDictionary *pn = [NSMutableDictionary dictionaryWithDictionary:userInfo];
 				[pn setObject:dict forKey:@"u"];
@@ -735,7 +753,10 @@ static PushNotificationManager * instance = nil;
 		}
 		
 		if(userInfo) {
-			NSString *jsonString = [userInfo cdvjk_JSONString];
+			PW_SBJsonWriter * json = [[PW_SBJsonWriter alloc] init];
+			NSString *jsonString =[json stringWithObject:userInfo];
+			[json release]; json = nil;
+
 			//the webview is not loaded yet, keep it for the callback
 			pushHandler.startPushData = jsonString;
 		}
