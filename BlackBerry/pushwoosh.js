@@ -10,73 +10,109 @@ var PushWoosh = {
 		
 		var language = window.navigator.language;
 		var lang = 'en';
-        if(language) {
-             lang = language.substring(0,2); 
-        }
-
+		if(language) {
+			lang = language.substring(0,2); 
+		}
+		
+		var dt = new Date();
+		var timezoneOffset = dt.getTimezoneOffset() * 60;	//in seconds
+		
 		var params = {
 				request : {
-					language : lang,
-					application : 'YOUR_PUSHWOOSH_APP_ID',
+					application : PushWoosh.appCode,
 					push_token : token,
-					device_type : 2,
-					hwid : blackberry.identity.IMEI
-					}
+					language : lang,
+					hwid : blackberry.identity.IMEI,
+					timezone : timezoneOffset,
+					device_type : 2
+				}
 			};
 
 		payload = (params) ? JSON.stringify(params) : '';
-		PushWoosh.helper(url, method, payload, function(data, status) {
-			var status_code = data['status_code'];
-			var message = data['status_message'];
-			
-			if(status_code == 200 || status_code == 103) {
-				//alert('success registration: ' + message);
-				lambda({
-					action : "subscribed",
-					success : true
-				});
-			} else {
-				lambdaerror(message);
-				//alert('error registration: ' + message);
-			}
-		}, function(xhr, error) {
-			//alert('xhr error registration: ' + JSON.stringify(error));
-			lambdaerror(jqXHR, err);
-		});
+		
+		PushWoosh.helper(url, method, payload, lambda, lambdaerror);
 	},
 	
-	unregister : function(lambda) {
+	unregister : function(lambda, lambdaerror) {
 		var method = 'POST';
 		var url = PushWoosh.baseurl + 'unregisterDevice';
 		
 		var params = {
 				request : {
-					application : 'YOUR_PUSHWOOSH_APP_ID',
+					application : PushWoosh.appCode,
 					hwid : blackberry.identity.IMEI
 				}
 			};
 
 		payload = (params) ? JSON.stringify(params) : '';
-		PushWoosh.helper(url, method, payload, function(data, status) {
-			var status_code = data['status_code'];
-			var message = data['status_message'];
-			
-			if(status_code == 200) {
-				lambda({
-					status : status_code
-				});
-			} else {
-				lambda({
-					status : status_code
-				});
-			}
-		}, function(xhr, error) {
-			lambda({
-				success : false,
-				xhr : xhr.status,
-				error : error
-			});
-		});
+		PushWoosh.helper(url, method, payload, lambda, lambdaerror);
+	},
+	
+	sendBadge : function(badgeNumber, lambda, lambdaerror) {
+		var method = 'POST';
+		var token = PushWoosh.getToken();
+		var url = PushWoosh.baseurl + 'setBadge';
+		
+		var params = {
+				request : {
+					application : PushWoosh.appCode,
+					hwid : blackberry.identity.IMEI,
+					badge: badgeNumber
+				}
+			};
+
+		payload = (params) ? JSON.stringify(params) : '';
+		PushWoosh.helper(url, method, payload, lambda, lambdaerror);
+	},
+
+	sendAppOpen : function(lambda, lambdaerror) {
+		var method = 'POST';
+		var token = PushWoosh.getToken();
+		var url = PushWoosh.baseurl + 'applicationOpen';
+		
+		var params = {
+				request : {
+					application : PushWoosh.appCode,
+					hwid : blackberry.identity.IMEI
+				}
+			};
+
+		payload = (params) ? JSON.stringify(params) : '';
+		PushWoosh.helper(url, method, payload, lambda, lambdaerror);
+	},
+
+	sendPushStat : function(hashValue, lambda, lambdaerror) {
+		var method = 'POST';
+		var token = PushWoosh.getToken();
+		var url = PushWoosh.baseurl + 'pushStat';
+		
+		var params = {
+				request : {
+					application : PushWoosh.appCode,
+					hwid : blackberry.identity.IMEI,
+					hash: hashValue
+				}
+			};
+
+		payload = (params) ? JSON.stringify(params) : '';
+		PushWoosh.helper(url, method, payload, lambda, lambdaerror);
+	},
+		
+	setTags : function(tagsJsonObject, lambda, lambdaerror) {
+		var method = 'POST';
+		var token = PushWoosh.getToken();
+		var url = PushWoosh.baseurl + 'setTags';
+		
+		var params = {
+				request : {
+					application : PushWoosh.appCode,
+					hwid : blackberry.identity.IMEI,
+					tags: tagsJsonObject
+				}
+			};
+
+		payload = (params) ? JSON.stringify(params) : '';
+		PushWoosh.helper(url, method, payload, lambda, lambdaerror);
 	},
 	
 	helper : function(url, method, params, lambda, lambdaerror) {
@@ -88,7 +124,13 @@ var PushWoosh = {
 			data: params,
 			contentType: "application/json; charset=utf-8",
 			success: function (msg, sts, jqXHR) {
-				lambda(msg, sts);
+				var status_code = msg['status_code'];
+
+				if(status_code == 200) {
+					lambda(msg);
+				} else {
+					lambdaerror(msg);
+				}
 			},
 			error: function (jqXHR, sts, err) {
 				lambdaerror(jqXHR, err);
