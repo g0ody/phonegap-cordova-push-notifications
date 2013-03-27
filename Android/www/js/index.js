@@ -2,28 +2,46 @@ function initPushwoosh()
 {
 	var pushNotification = window.plugins.pushNotification;
 	pushNotification.onDeviceReady();
-	
+
+	document.addEventListener('push-notification', function(event) {
+   	                            var title = event.notification.title;
+   	                            var userData = event.notification.userdata;
+
+   	                            if(typeof(userData) != "undefined") {
+   									console.warn('user data: ' + JSON.stringify(userData));
+   								}
+
+   								navigator.notification.alert(title);
+
+   								pushNotification.stopGeoPushes();
+   							  });
+}
+
+function registerPushwoosh()
+{
+	var pushNotification = window.plugins.pushNotification;
 	//projectid: "GOOGLE_PROJECT_ID", appid : "PUSHWOOSH_APP_ID"
 	pushNotification.registerDevice({ projectid: "60756016005", appid : "4F0C807E51EC77.93591449" },
 									function(token) {
+										alert(token);
 										onPushwooshInitialized(token);
 									},
 									function(status) {
+										alert("failed to register: " +  status);
 									    console.warn(JSON.stringify(['failed to register ', status]));
 									});
+}
 
-	document.addEventListener('push-notification', function(event) {
-	                            var title = event.notification.title;
-	                            var userData = event.notification.userdata;
-	                            
-	                            if(typeof(userData) != "undefined") {
-									console.warn('user data: ' + JSON.stringify(userData));
-								}
-									
-								navigator.notification.alert(title);
-								
-								pushNotification.stopGeoPushes();
-							  });
+function unregisterPushwoosh()
+{
+	var pushNotification = window.plugins.pushNotification;
+	pushNotification.unregisterDevice(function(token) {
+										alert("unregistered, old token " + token);
+									},
+									function(status) {
+										alert("failed to unregister: " +  status);
+									    console.warn(JSON.stringify(['failed to unregister ', status]));
+									});
 }
 
 //set the settings for Pushwoosh or set tags, this must be called only after successful registration
@@ -99,30 +117,40 @@ function onPushwooshInitialized(pushToken)
 }
 
 var app = {
+    // Application Constructor
     initialize: function() {
-        this.bind();
+        this.bindEvents();
     },
-    bind: function() {
-        document.addEventListener('deviceready', this.deviceready, false);
+    // Bind Event Listeners
+    //
+    // Bind any events that are required on startup. Common events are:
+    // 'load', 'deviceready', 'offline', and 'online'.
+    bindEvents: function() {
+        document.addEventListener('deviceready', this.onDeviceReady, false);
     },
-
-    deviceready: function() {
-        // note that this is an event handler so the scope is that of the event
-        // so we need to call app.report(), and not this.report()
+    // deviceready Event Handler
+    //
+    // The scope of 'this' is the event. In order to call the 'receivedEvent'
+    // function, we must explicity call 'app.receivedEvent(...);'
+    onDeviceReady: function() {
         initPushwoosh();
-
-        app.report('deviceready');
+        app.receivedEvent('deviceready');
         
         //optional: create local notification alert
-		//pushNotification.clearLocalNotification();
-		//pushNotification.createLocalNotification({"msg":"message", "seconds":30, "userData":"optional"});
+        //var pushNotification = window.plugins.pushNotification;
+	//pushNotification.clearLocalNotification();
+	//pushNotification.createLocalNotification({"msg":"message", "seconds":30, "userData":"optional"});
+
     },
-    
-    report: function(id) {
-        console.log("report:" + id);
-        // hide the .pending <p> and show the .complete <p>
-        document.querySelector('#' + id + ' .pending').className += ' hide';
-        var completeElem = document.querySelector('#' + id + ' .complete');
-        completeElem.className = completeElem.className.split('hide').join('');
+    // Update DOM on a Received Event
+    receivedEvent: function(id) {
+        var parentElement = document.getElementById(id);
+        var listeningElement = parentElement.querySelector('.listening');
+        var receivedElement = parentElement.querySelector('.received');
+
+        listeningElement.setAttribute('style', 'display:none;');
+        receivedElement.setAttribute('style', 'display:block;');
+
+        console.log('Received Event: ' + id);
     }
 };
