@@ -136,7 +136,7 @@
 }
 
 
-- (void) onPushAccepted:(PushNotificationManager *)manager withNotification:(NSDictionary *)pushNotification{
+- (void) onPushAccepted:(PushNotificationManager *)manager withNotification:(NSDictionary *)pushNotification onStart:(BOOL)onStart{
 	//reset badge counter
 	[[UIApplication sharedApplication] setApplicationIconBadgeNumber:0];
 	
@@ -152,6 +152,8 @@
 			pushNotification = pn;
 		}
 	}
+
+  [pushNotification setValue:onStart forKey:@"onStart"];
 	
 	PW_SBJsonWriter * json = [[PW_SBJsonWriter alloc] init];
 	NSString *jsonString =[json stringWithObject:pushNotification];
