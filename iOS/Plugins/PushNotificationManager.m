@@ -748,6 +748,7 @@ static PushNotificationManager * instance = nil;
 			if (dict) {
 				NSMutableDictionary *pn = [NSMutableDictionary dictionaryWithDictionary:userInfo];
 				[pn setObject:dict forKey:@"u"];
+				[pn setValue:[NSNumber numberWithBool: YES ] forKey:@"onStart"];
 				userInfo = pn;
 			}
 		}

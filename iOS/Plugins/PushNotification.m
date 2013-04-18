@@ -149,11 +149,10 @@
 		if (dict) {
 			NSMutableDictionary *pn = [NSMutableDictionary dictionaryWithDictionary:pushNotification];
 			[pn setObject:dict forKey:@"u"];
+      [pn setValue:[NSNumber numberWithBool: onStart ] forKey:@"onStart"];
 			pushNotification = pn;
 		}
 	}
-
-  [pushNotification setValue:onStart forKey:@"onStart"];
 	
 	PW_SBJsonWriter * json = [[PW_SBJsonWriter alloc] init];
 	NSString *jsonString =[json stringWithObject:pushNotification];
