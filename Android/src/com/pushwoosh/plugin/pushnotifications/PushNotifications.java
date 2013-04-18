@@ -110,7 +110,7 @@ public class PushNotifications extends Plugin
 		try
 		{
 			mPushManager =
-					new PushManager(cordova.getActivity(), params.getString("appid"), params.getString("projectid"));
+					new PushManager(cordova.getActivity(), params.getString("pw_appid"), params.getString("projectid"));
 		}
 		catch (JSONException e)
 		{
