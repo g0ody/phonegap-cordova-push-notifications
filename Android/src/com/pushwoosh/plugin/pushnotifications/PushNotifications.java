@@ -157,7 +157,7 @@ public class PushNotifications extends Plugin
 		{
 			if (intent.hasExtra(PushManager.PUSH_RECEIVE_EVENT))
 			{
-				doOnMessageReceive(intent.getExtras().getString(PushManager.PUSH_RECEIVE_EVENT));
+				doOnMessageReceive(intent.getExtras().getString(PushManager.PUSH_RECEIVE_EVENT), true);
 			}
 			else if (intent.hasExtra(PushManager.REGISTER_EVENT))
 			{
@@ -580,10 +580,10 @@ public class PushNotifications extends Plugin
 		callbackIds.remove(callbackId);
 	}
 
-	private void doOnMessageReceive(String message)
+	private void doOnMessageReceive(String message, boolean onStart)
 	{
 		Log.e("doOnMessageReceive", "message is: " + message);
-		String jsStatement = String.format("window.plugins.pushNotification.notificationCallback(%s);", message);
+		String jsStatement = String.format("window.plugins.pushNotification.notificationCallback(%s, %s);", message, onStart);
 		sendJavascript(jsStatement);
 	}
 
@@ -592,7 +592,7 @@ public class PushNotifications extends Plugin
 		@Override
 		protected void onMessageReceive(Intent intent)
 		{
-			doOnMessageReceive(intent.getStringExtra(DATA_KEY));
+			doOnMessageReceive(intent.getStringExtra(DATA_KEY), false);
 		}
 	};
 }

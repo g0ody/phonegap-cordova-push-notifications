@@ -109,8 +109,9 @@
 	//iOS End----
 
 	// Event spawned when a notification is received while the application is active
-	PushNotification.prototype.notificationCallback = function(notification) {
+	PushNotification.prototype.notificationCallback = function(notification, onStart) {
 		var ev = document.createEvent('HTMLEvents');
+		ev.onStart = onStart;
 		ev.notification = notification;
 		ev.initEvent('push-notification', true, true, arguments);
 		document.dispatchEvent(ev);
